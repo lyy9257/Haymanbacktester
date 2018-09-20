@@ -1,7 +1,7 @@
 ## 다종목 오버나잇(종가매수 시가매도) 백테스팅 템플릿
 
 import create_data_base
-import logic
+import logic_overnight
 
 import pandas as pd
 import numpy as np
@@ -41,7 +41,7 @@ class Core():
     def set_position(self, stock_code):
 
         stock_data = self.add_technical_analyze_data(stock_code)
-        position_array = logic.set_position(stock_data)
+        position_array = logic_overnight.set_position(stock_data)
 
         return position_array
 
@@ -135,12 +135,12 @@ class Core():
         bottom_axes.plot(data.index, Max_Daily_Drawdown_Strategy, label='MDD')
 
         top_axes.legend(loc='best')
-        data.to_excel("./excel/BackTestResult(Param = %s).xlsx" %self.param, encoding = 'euc_KR')
+        data.to_excel("./BackTestResult(Param = %s).xlsx" %self.param, encoding = 'euc_KR')
 
         MDD_Strategy = round(abs(pd.Series.min(Max_Daily_Drawdown_Strategy)) * 100, 2)
         print('Strategy Result, CAGR : %.2f %%, MDD : %.2f %%, C/M : %.2f' %(CAGR_Strategy, MDD_Strategy, CAGR_Strategy/MDD_Strategy))
 
-        plt.savefig("./graph/BackTestResult(Param = %s).png" %self.param, dpi=240)       
+        plt.savefig("./BackTestResult(Param = %s).png" %self.param, dpi=240)       
         plt.title('Strategy Result, CAGR : %.2f %%, MDD : %.2f %%, C/M : %.2f' %(CAGR_Strategy, MDD_Strategy, CAGR_Strategy/MDD_Strategy))
         plt.tight_layout()
         plt.show()
@@ -153,8 +153,7 @@ if __name__ == '__main__':
     백테스팅 기간은 맨 첫번째에 있는 종목의 상장기간으로 설정됩니다.
     '''
 
-    ## etf_universe = [,  'A251340', 'A114800', 'A252670']
-    etf_universe = ['a233740', 'a229200']
+    etf_universe = ['A114800']
   
     backtesting = Core(etf_universe, 2)
     backtesting.draw_graph()
