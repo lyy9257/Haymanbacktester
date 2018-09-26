@@ -29,6 +29,7 @@ class Core():
         self.param = k ## 전략에 파라미터 들어갈때 사용
         self.trade_fee = 0.022 ## 크레온 수수료 0.011%
 
+
     ## 기술적 분석 데이터 추가
     def add_technical_analyze_data(self, stock_code):
 
@@ -36,6 +37,7 @@ class Core():
         stock_data = pd.read_sql("SELECT * FROM %s" %stock_code, self.con, index_col=None)
 
         return stock_data
+
 
     ## 종목별 포지션 계산
     def set_position(self, stock_code):
@@ -73,6 +75,7 @@ class Core():
 
         return profit_array
 
+
     ## 각 종목별 수익률 데이타 합성
     def merge_total_trade_data(self):
 
@@ -91,6 +94,7 @@ class Core():
 
         return total_trade_data
         
+
     ## 수익률에 따른 잔고 반영
     def calculate_account_data(self):
         
@@ -109,51 +113,3 @@ class Core():
         account_data_dataframe = pd.concat([account_data_dataframe, temp_date_data['Date']], axis=1)
 
         return account_data_dataframe
-
-    ## 그래프 출력
-    def draw_graph(self):
-
-        data = self.calculate_account_data()
-        
-        CAGR_Strategy = round((((data.at[len(data.index) - 1, 'Basket']) / 1000)**(1/int(len(data.index)/365.0)) - 1), 4) * 100
-
-        Roll_Max_Strategy = data['Basket'].rolling(len(data.index), min_periods=1).max()
-        Daily_Drawdown_Strategy = data['Basket'] / Roll_Max_Strategy - 1.0
-        Max_Daily_Drawdown_Strategy = Daily_Drawdown_Strategy.rolling(len(data.index), min_periods=1).min()
-
-        data.insert(len(data.columns), "DD", Daily_Drawdown_Strategy)
-        data.insert(len(data.columns), "MDD", Max_Daily_Drawdown_Strategy)
-
-        fig = plt.figure(figsize=(16, 9))
-
-        top_axes = plt.subplot2grid((4,4), (0,0), rowspan=3, colspan=4)
-        bottom_axes = plt.subplot2grid((4,4), (3,0), rowspan=1, colspan=4)
-
-        top_axes.plot(data.index, data['Basket'], label='Basket')
-
-        bottom_axes.plot(data.index, Daily_Drawdown_Strategy, label='DD')
-        bottom_axes.plot(data.index, Max_Daily_Drawdown_Strategy, label='MDD')
-
-        top_axes.legend(loc='best')
-        data.to_excel("./BackTestResult(Param = %s).xlsx" %self.param, encoding = 'euc_KR')
-
-        MDD_Strategy = round(abs(pd.Series.min(Max_Daily_Drawdown_Strategy)) * 100, 2)
-        print('Strategy Result, CAGR : %.2f %%, MDD : %.2f %%, C/M : %.2f' %(CAGR_Strategy, MDD_Strategy, CAGR_Strategy/MDD_Strategy))
-
-        plt.savefig("./BackTestResult(Param = %s).png" %self.param, dpi=240)       
-        plt.title('Strategy Result, CAGR : %.2f %%, MDD : %.2f %%, C/M : %.2f' %(CAGR_Strategy, MDD_Strategy, CAGR_Strategy/MDD_Strategy))
-        plt.tight_layout()
-        plt.show()
-        plt.close(fig)
-
-
-if __name__ == '__main__':
-    '''
-    유니버스 설정시 유의 사항
-    백테스팅 기간은 맨 첫번째에 있는 종목의 상장기간으로 설정됩니다.
-    '''
-
-    etf_universe = ['A114800']
-  
-    backtesting = Core(etf_universe, 2)
-    backtesting.draw_graph()

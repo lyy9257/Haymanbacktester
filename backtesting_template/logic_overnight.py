@@ -1,6 +1,7 @@
 ## 백테스팅용 로직 설정
 ## logic 함수를 수정하시기 바랍니다.
 
+
 ## logic 함수의 결과에 따른 매수 포지션 설정
 def set_position(stock_data):
 
@@ -26,9 +27,9 @@ def set_position(stock_data):
     return position_array
 
 
+
 ## 매매 로직 설정
 ## 현재 주석처리 되어있는 코드는 어제보다 오늘 시가가 높을 경우 매수포지션
-
 def logic(stock_data, today):
 
     yesterday = today - 1
