@@ -1,15 +1,12 @@
 import overnight_basket
+import config
 
+import time 
 import pandas as pd
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import win32com
 
-from pandas import DataFrame
 from datetime import datetime
-import time
-import sqlite3    
 
 def make_stategy_result_data(data):
     temp_data = data
@@ -35,20 +32,27 @@ class show_result_strategy():
         self.manufactured_data = make_stategy_result_data(trading_data)
         
 
-    def show_strategy_result_table(self):
-        data = self.manufactured_data
-        table_data = []
+    def show_strategy_result(self):
+        data = self.manufactured_data.drop(len(self.manufactured_data.index) - 1)
+        
+        start_date = str(data.at[0, 'Date'])
+        end_date = str(data.at[len(data.index) - 1, 'Date'])
+        
+        total_return = data.at[len(data.index) - 1, 'Basket'] / data.at[0, 'Basket'] 
+        cagr = round(((total_return)**(1/int(len(data.index)/365.0)) - 1), 4) * 100
+        max_draw_down = round(abs(pd.Series.min(data["max_draw_down"])) * 100, 2)
+        volatility_average_month = np.nanmean(data["volatility_month"])
+        volatility_average_year = np.nanmean(data["volatility_year"])
 
-        CAGR = round((((data.at[len(data.index) - 1, 'Basket']) / data.at[0, 'Basket'])**\
-                        (1/int(len(data.index)/365.0)) - 1), 4) * 100
-        MDD = round(abs(pd.Series.min(data["max_draw_down"])) * 100, 2)
-        volatility_average = np.nanmean(data["volatility_year"])
-
-        table_data.append([CAGR, MDD, volatility_average])
-        result_table = pd.DataFrame(table_data, columns = ['CAGR', 'MDD', 'volatility_average'])
-
-        print(result_table)
-
+        print('Strategy : %s' %config.strategy_name)
+        print('start : %s-%s-%s' %(start_date[:4], start_date[4:6],start_date[6:8]))
+        print('end   : %s-%s-%s' %(end_date[:4], end_date[4:6], end_date[6:8]))
+        print('----------------------')
+        print('Total Return : %.2f %%' %(total_return * 100))
+        print('CAGR  : %.2f %%' %cagr)
+        print('MDD   : %.2f %%' %max_draw_down)
+        print('Month Volatility : %.4f %%' %volatility_average_month)
+        print('Year Volatility : %.4f %%' %volatility_average_year)
 
     def show_asset_growth_graph(self):
         data = self.manufactured_data

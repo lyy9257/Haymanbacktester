@@ -14,8 +14,9 @@ from datetime import datetime
 import time
 import sqlite3
 
-resultdata = []
+import config
 
+resultdata = []
 flag = 0
 
 class Core():
@@ -27,8 +28,10 @@ class Core():
         self.stockdata = 'kospi.db' ## 코스피 DB 파일
         self.con = sqlite3.connect(self.stockdata) 
         self.param = k ## 전략에 파라미터 들어갈때 사용
-        self.trade_fee = 0.022 ## 크레온 수수료 0.011%
-
+        
+        self.trade_fee = config.trade_fee * 2 ## 왕복 수수료
+        self.trade_tax = config.trade_tax
+        self.position_size = config.position_size
 
     ## 기술적 분석 데이터 추가
     def add_technical_analyze_data(self, stock_code):
@@ -62,7 +65,7 @@ class Core():
 
             ## 어제 Buy Position이었으면 전일 종가에 매수, 금일 시가에 매도 수익률을 돌려준다.
             if position_data[yesterday] == 'Buy':
-                temp_profit = ((stock_data.at[today, "Open"]) / stock_data.at[yesterday, "Close"]) * (1 - (self.trade_fee/100))
+                temp_profit = ((stock_data.at[today, "Open"]) / stock_data.at[yesterday, "Close"]) * (1 - (self.trade_fee/100) - (self.trade_tax/100))
                 profit_array.append(temp_profit)
 
             ## 조건에 안맞으면 아무것도 하지 않음.
@@ -102,7 +105,7 @@ class Core():
         profit_data = self.merge_total_trade_data()
 
         for i in range(len(profit_data.index)):
-            temp_account_data = account_data[i] * 0.95 * profit_data.at[i, "profit_average"] + account_data[i] * 0.05
+            temp_account_data = account_data[i] * self.position_size * profit_data.at[i, "profit_average"] + account_data[i] * (1 - self.position_size)
             account_data.append(temp_account_data)
             i += 1    
 
