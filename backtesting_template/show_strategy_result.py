@@ -33,17 +33,22 @@ class show_result_strategy():
         
 
     def show_strategy_result(self):
+
+        ##맨 마지막 행 삭제
         data = self.manufactured_data.drop(len(self.manufactured_data.index) - 1)
         
+        ## 백테스트 시작, 종료일자 출력
         start_date = str(data.at[0, 'Date'])
         end_date = str(data.at[len(data.index) - 1, 'Date'])
         
-        total_return = data.at[len(data.index) - 1, 'Basket'] / data.at[0, 'Basket'] 
+        ## 주요 성과지표 계산
+        total_return = data.at[len(data.index) - 1, 'Basket'] / data.at[0, 'Basket']
         cagr = round(((total_return)**(1/int(len(data.index)/365.0)) - 1), 4) * 100
         max_draw_down = round(abs(pd.Series.min(data["max_draw_down"])) * 100, 2)
         volatility_average_month = np.nanmean(data["volatility_month"])
         volatility_average_year = np.nanmean(data["volatility_year"])
 
+        ## 성과지표 출력
         print('Strategy : %s' %config.strategy_name)
         print('start : %s-%s-%s' %(start_date[:4], start_date[4:6],start_date[6:8]))
         print('end   : %s-%s-%s' %(end_date[:4], end_date[4:6], end_date[6:8]))
@@ -54,6 +59,8 @@ class show_result_strategy():
         print('Month Volatility : %.4f %%' %volatility_average_month)
         print('Year Volatility : %.4f %%' %volatility_average_year)
 
+
+    ## 그래프 출력
     def show_asset_growth_graph(self):
         data = self.manufactured_data
         
@@ -68,6 +75,7 @@ class show_result_strategy():
         bottom_axes.plot(data.index, data["max_draw_down"], label="max_draw_down")
 
         top_axes.legend(loc='best')
+        data = data.set_index('Date')
         data.to_excel("./Backtest_result.xlsx", encoding = 'euc_KR')
 
         plt.savefig("./graph.png", dpi=240)       

@@ -1,7 +1,8 @@
-## 다종목 오버나잇(종가매수 시가매도) 백테스팅 템플릿
+## 다종목 스윙(해당일 종가매수 해당일 종가매도) 백테스팅 템플릿
 
 import create_data_base
 import logic
+
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
@@ -35,13 +36,13 @@ class Core():
     ## 기술적 분석 데이터 추가
     def add_technical_analyze_data(self, stock_code):
 
-        ## DB에서 원하는 종목 데이터 호출
+        ## DB에서 유니버 소속 종목 데이터 호출
         stock_data = pd.read_sql("SELECT * FROM %s" %stock_code, self.con, index_col=None)
 
         return stock_data
 
 
-    ## 종목별 포지션 계산
+    ## 종목별 포지션 설정
     def set_position(self, stock_code):
 
         stock_data = self.add_technical_analyze_data(stock_code)
@@ -49,54 +50,62 @@ class Core():
 
         return position_array
 
+
     ## 포지션에 따른 수익률 계산
     def calculate_profit(self, stock_code):
-
-        '''
-        수익률을 구하는 공식
-        1. 전일 매수 하였을 경우
-        - 전일 종가에 매수하여, 익일 시가에 매도한 수익률을 구한다.
-
-        2. 전일 홀드 하였을 경우
-        - 수익률은 1(백분위 환산 0%)
-        '''
 
         position_data = self.set_position(stock_code)
         stock_data = self.add_technical_analyze_data(stock_code)
         profit_array = [1] ## 첫날에는 매수를 하지 않기 때문에 수익률이 0%
 
         today = 1
+        yesterday = 0
 
-        ## 수익률 계산
-        while today < len(position_data) :
-            yesterday = today - 1
-            ## 어제 Buy Position이었으면 전일 종가에 매수, 금일 시가에 매도 수익률을 돌려준다.
-            if position_data[yesterday] == 'Buy':
-                today_profit = ((stock_data.at[today, "Open"]) / stock_data.at[yesterday, "Close"]) * (1 - (self.trade_fee/100) - (self.trade_tax/100))
-                profit_array.append(today_profit)
+        while today < len(position_data):
 
-            ## 조건에 안맞으면 아무것도 하지 않음.
+            ## 매수 포지션
+            ## 수익률 = 종가에 매수하였으므로 전일 수익률 * (1 - 증권 수수료) 
+            if position_data[yesterday] == 'Hold' and position_data[today] == 'Buy':
+                temp_profit = profit_array[yesterday] * (1 - (self.trade_fee/100))
+                profit_array.append(temp_profit)
+
+            ## 매수 유지 포지션
+            ## 수익률 = 전일 수익률 * 전일 종가 / 금일 종가 
+            elif position_data[yesterday] == 'Buy' and position_data[today] == 'Buy':
+                temp_profit = profit_array[yesterday] * (stock_data.at[today, "Close"]) / stock_data.at[yesterday, "Close"])
+                profit_array.append(temp_profit)
+
+            ## 매도 포지션
+            ## 수익률 = 전일 수익률 * 전일 종가 / 금일 종가 
+            elif position_data[yesterday] == 'Buy' and position_data[today] == 'Hold':
+                temp_profit = profit_array[yesterday] * (stock_data.at[today, "Close"]) / stock_data.at[yesterday, "Close"]) * (1 - (self.trade_fee/100) - (self.trade_tax/100))
+                profit_array.append(temp_profit)
+
+            ## 현금 보유 포지션
             else:    
-                today_profit = 1
-                profit_array.append(today_profit)
-
+                temp_profit = profit_array[yesterday]
+                profit_array.append(temp_profit)
+           
             today += 1
+            yesterday += 1
 
         return profit_array
 
 
-    ## 각 종목별 수익률 데이타 합성
+    ## 각 종목별 수익률 데이터 합성
     def merge_total_trade_data(self):
 
+        ## 총 수익 데이터 저장용 Dataframe 선언
         total_trade_data = pd.DataFrame()
       
+        ## 종목별 수익률 로드후 데이터프레임에 저장
         for i in range(len(self.stock_universe)):
             temp_profit_data = self.calculate_profit(self.stock_universe[i])
             temp_profit_data.reverse()
             total_trade_data.insert(len(total_trade_data.columns), "%s" %self.stock_universe[i], pd.Series(temp_profit_data))   
             i += 1
-            print("%d / %d" %(i, len(self.stock_universe)))
 
+        ## 종목별 수익률의 평균 산출    
         total_trade_data = total_trade_data.reindex(index=total_trade_data.index[::-1])
         total_trade_tata = total_trade_data.fillna(1, inplace=True)
         total_trade_data["profit_average"] = total_trade_data.mean(axis=1)
@@ -106,26 +115,16 @@ class Core():
 
     ## 수익률에 따른 잔고 반영
     def calculate_account_data(self):
-
-        '''
-        잔고를 구하는 공식
-        금일 시가 매도 기준 잔고를 구함.
-        => D-1일 잔고 * D-Day일 수익률 (위에서 구한 수익률)
-        '''
         
-        ## 시작 잔고 = 1000
+        ## 기본 잔고 = 1000
         account_data = [1000]
         profit_data = self.merge_total_trade_data()
 
-        today = 1
-
-        ## 금일 종가 기준 잔고
-        while today < len(profit_data.index):
-            yesterday = today - 1
-            today_account_data = account_data[yesterday] * self.position_size * profit_data.at[yesterday, "profit_average"] + account_data[yesterday] * (1 - self.position_size)
-            account_data.append(today_account_data)
-            print(today, today_account_data)
-            today += 1    
+        ## 기본 잔고 = 1000
+        for i in range(len(profit_data.index)):
+            temp_account_data = account_data[i] * self.position_size * profit_data.at[i, "profit_average"] + account_data[i] * (1 - self.position_size)
+            account_data.append(temp_account_data)
+            i += 1    
 
         account_data_dataframe = pd.DataFrame(account_data, columns = ['Basket']) 
         account_data_dataframe = pd.concat([account_data_dataframe, profit_data], axis=1)
@@ -134,3 +133,4 @@ class Core():
         account_data_dataframe = pd.concat([account_data_dataframe, temp_date_data['Date']], axis=1)
 
         return account_data_dataframe
+
