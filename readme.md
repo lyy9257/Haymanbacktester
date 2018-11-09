@@ -1,4 +1,4 @@
-HaymanBacktester
-Àü·«ÀÇ ¹éÅ×½ºÆÃÀ» ½Ç½ÃÇÏ°í, Àü·«ÀÇ °á°ú¸¦ º¸¿©ÁØ´Ù
-ÀÛ¾÷¾ğ¾î : ÆÄÀÌ½ã
-api : ´ë½ÅÁõ±Ç CYBOS
+# HaymanBacktester
+
+## Feature Branch
+  HaymanBacktesterì˜ ê°œë³„ ê¸°ëŠ¥ì„ ë¶„ë¦¬í•˜ì—¬ ì—…ë¡œë“œí•©ë‹ˆë‹¤.
