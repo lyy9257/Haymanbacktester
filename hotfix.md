@@ -1,1 +1,5 @@
-완성 프로그램의 버그를 피드백 받아 저장합니다.
+# HaymanBacktester
+
+## Hotfix Branch
+  master branch에서 버그가 발생한 버전의 프로그램을 버그 수정하여 업로드합니다.
+
