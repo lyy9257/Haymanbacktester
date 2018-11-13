@@ -93,7 +93,7 @@ class StockChart:
         ## 다만 호출한 데이터를 그대로 쓰게되면 날짜가 최신 -> 옛날순으로 가므로 리버스해서 역순에서 정순을 바꿔준다.
         stock_raw_data = pd.DataFrame(receive_data, columns = ['Date', 'Open', 'High', 'Low', 'Close', 'TradeVolume'])
 
-        return stock_raw_data[::-1]
+        return stock_raw_data
 
 
 ## 호출한 주가 데이터를 DB 파일로 저장
@@ -108,7 +108,7 @@ class ExportDatabase:
         ## 분봉 데이터 저장(분단위 별로 나누어 저장)
         kospi = self.CpCodeMgr.GetstockListByMarket(1) # 코스피
         kosdaq = self.CpCodeMgr.GetstockListByMarket(2) # 코스닥
-        code_list = kospi + kosdaq
+        code_list = ['A233740','A229200','A251340']
 
         ## 분봉 데이터 저장(분단위 별로 나누어 저장)
         if type(self.peroid) is int:
@@ -136,8 +136,8 @@ if __name__ == '__main__':
 
     ## 데이터베이스 제작 시간간격
     calender_peroid = ['day', 'month', 'year']
-    time_peroid = [1, 3, 5, 10, 30, 60, 180]
-
+    ## time_peroid = [1, 3, 5, 10, 30, 60, 180]
+    time_peroid = [10]
     ## 분봉 데이터베이스 제작
     for i in range(len(time_peroid)):
         MakeDataBase = ExportDatabase(time_peroid[i])
